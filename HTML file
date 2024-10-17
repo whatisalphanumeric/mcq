@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #form-container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"], input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+        }
+
+        #uploaded-file {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+    <script src="https://cdn.rawgit.com/naptha/tesseract.js/2.1.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+    <div id="form-container">
+        <form id="options-form">
+            <label for="question">Question:</label>
+            <input type="text" id="question" required>
+
+            <label for="option1">Option 1:</label>
+            <input type="text" id="option1" required>
+
+            <label for="option2">Option 2:</label>
+            <input type="text" id="option2" required>
+
+            <label for="option3">Option 3:</label>
+            <input type="text" id="option3" required>
+
+            <label for="option4">Option 4:</label>
+            <input type="text" id="option4" required>
+
+            <label for="correct-option">Correct Option Number (1-4):</label>
+            <input type="number" id="correct-option" min="1" max="4" required>
+
+            <label for="file-input">Upload Image (max 2 MB):</label>
+            <input type="file" id="file-input" accept="image/*">
+
+            <button type="submit">Submit</button>
+        </form>
+
+        <div id="uploaded-file"></div>
+        <div id="result-container"></div>
+    </div>
+
+    <script>
+        const optionsForm = document.getElementById('options-form');
+        const uploadedFileContainer = document.getElementById('uploaded-file');
+        const resultContainer = document.getElementById('result-container');
+
+        optionsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get the question and options
+            const question = document.getElementById('question').value;
+            const fileInput = document.getElementById('file-input');
+
+            // Clear previous results
+            uploadedFileContainer.innerHTML = '';
+            resultContainer.innerHTML = '';
+
+            // Handle file input
+            const file = fileInput.files[0];
+            if (file && file.size <= 2 * 1024 * 1024) { // Check if file size is <= 2 MB
+                uploadedFileContainer.textContent = `Uploaded File: ${file.name}`;
+                
+                // Use Tesseract.js to perform OCR on the uploaded image
+                Tesseract.recognize(
+                    file,
+                    'eng', // Language
+                    {
+                        logger: info => console.log(info) // Log progress
+                    }
+                ).then(({ data: { text } }) => {
+                    // Check if the question is in the extracted text
+                    if (text.includes(question)) {
+                        resultContainer.innerHTML = `<div class="result">The question is found in the image!</div>`;
+                    } else {
+                        resultContainer.innerHTML = `<div class="result">The question is NOT found in the image.</div>`;
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    resultContainer.innerHTML = `<div class="result">An error occurred during OCR processing.</div>`;
+                });
+            } else {
+                resultContainer.innerHTML = `<div class="result">Please upload a valid image file (max 2 MB).</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
